@@ -99,7 +99,7 @@ public:
 	/// Do only use in error cases, they are quite expensive.
 	std::string lineAtPosition(int _position) const;
 
-	/// @returns (1-based) line and column that matches to the byte offset @p _position.
+	/// @returns (0-based) line and column that matches to the byte offset @p _position.
 	std::tuple<int, int> translatePositionToLineColumn(int _position) const;
 	///@}
 
