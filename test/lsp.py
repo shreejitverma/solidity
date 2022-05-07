@@ -16,7 +16,7 @@ from deepdiff import DeepDiff
 # {{{ JsonRpcProcess
 class BadHeader(Exception):
     def __init__(self, msg: str):
-        super().__init__("Bad header: " + msg)
+        super().__init__(f"Bad header: {msg}")
 
 class JsonRpcProcess:
     exe_path: str
@@ -71,10 +71,7 @@ class JsonRpcProcess:
                 if not line.isdigit():
                     raise BadHeader("size is not int")
                 message_size = int(line)
-            elif line.startswith(CONTENT_TYPE_HEADER):
-                # nothing todo with type for now.
-                pass
-            else:
+            elif not line.startswith(CONTENT_TYPE_HEADER):
                 raise BadHeader("unknown header")
         if message_size is None:
             raise BadHeader("missing size")
@@ -179,8 +176,11 @@ class SolidityLSPTestSuite: # {{{
         colorama.init()
         args = create_cli_parser().parse_args()
         self.solc_path = args.solc_path
-        self.project_root_dir = os.path.realpath(args.project_root_dir) + "/test/libsolidity/lsp"
-        self.project_root_uri = "file://" + self.project_root_dir
+        self.project_root_dir = (
+            f"{os.path.realpath(args.project_root_dir)}/test/libsolidity/lsp"
+        )
+
+        self.project_root_uri = f"file://{self.project_root_dir}"
         self.print_assertions = args.print_assertions
         self.trace_io = args.trace_io
         self.test_pattern = args.test_pattern
@@ -199,7 +199,7 @@ class SolidityLSPTestSuite: # {{{
         ])
         filtered_tests = fnmatch.filter(all_tests, self.test_pattern)
         for method_name in filtered_tests:
-            test_fn = getattr(self, 'test_' + method_name)
+            test_fn = getattr(self, f'test_{method_name}')
             title: str = test_fn.__name__[5:]
             print(f"{SGR_TEST_BEGIN}Testing {title} ...{SGR_RESET}")
             try:
@@ -256,7 +256,7 @@ class SolidityLSPTestSuite: # {{{
         return f"{self.project_root_dir}/{test_case_name}.sol"
 
     def get_test_file_uri(self, test_case_name):
-        return "file://" + self.get_test_file_path(test_case_name)
+        return f"file://{self.get_test_file_path(test_case_name)}"
 
     def get_test_file_contents(self, test_case_name):
         """
@@ -275,7 +275,7 @@ class SolidityLSPTestSuite: # {{{
         An exception is raised on expectation failures.
         """
         assert message is not None
-        if 'error' in message.keys():
+        if 'error' in message:
             code = message['error']["code"]
             text = message['error']['message']
             raise RuntimeError(f"Error {code} received. {text}")
@@ -289,7 +289,7 @@ class SolidityLSPTestSuite: # {{{
         Return `count` number of published diagnostic reports sorted by file URI.
         """
         reports = []
-        for _ in range(0, count):
+        for _ in range(count):
             message = solc.receive_message()
             assert message is not None # This can happen if the server aborts early.
             reports.append(
